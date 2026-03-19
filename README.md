@@ -37,7 +37,7 @@ FraudGraph sees the whole picture.
 ```
 Standard ML sees:          FraudGraph sees:
 
-  Txn #1042                    ┌──── Acct 47 ────┐
+  Txn #1042                    ┌──── Acct 47 ─────┐
   Amount: ₹15,000              │                  │
   Hour: 14:32          →    Acct 12         Acct 103
   Merchant: Transfer           │                  │
@@ -66,44 +66,44 @@ Standard ML sees:          FraudGraph sees:
 ## 🏗 Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                       FRAUDGRAPH PIPELINE                       │
-├─────────────────────────────────────────────────────────────────┤
+┌──────────────────────────────────────────────────────────────────┐
+│                       FRAUDGRAPH PIPELINE                        │
+├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  Transaction Data                                                │
 │        │                                                         │
 │        ▼                                                         │
-│  ┌──────────────────┐                                           │
-│  │  graph_builder   │  Nodes = accounts  (6 features each)      │
-│  │      .py         │  Edges = transactions  (4 features each)  │
-│  └────────┬─────────┘  400 nodes  ·  ~2,182 edges               │
+│  ┌──────────────────┐                                            │
+│  │  graph_builder   │  Nodes = accounts  (6 features each)       │
+│  │      .py         │  Edges = transactions  (4 features each)   │
+│  └────────┬─────────┘  400 nodes  ·  ~2,182 edges                │
 │           │                                                      │
 │           ▼                                                      │
-│  ┌──────────────────┐                                           │
-│  │   gat_model.py   │  Layer 1: Multi-head attention (32, 4h)   │
-│  │  Graph Attention │  Layer 2: Structural embedding (16 dims)  │
-│  │     Network      │  Output:  Graph-aware account embeddings  │
-│  └────────┬─────────┘                                           │
-│           │  GAT embeddings (16 dims)                           │
-│           │  + raw node features (6 dims)                       │
-│           ▼  = augmented input (22 dims)                        │
-│  ┌──────────────────┐                                           │
-│  │ GradientBoosting │  150 estimators  ·  depth 4               │
-│  │   Classifier     │  Output: fraud probability per account    │
-│  └────────┬─────────┘  ROC-AUC: 1.0                            │
+│  ┌──────────────────┐                                            │
+│  │   gat_model.py   │  Layer 1: Multi-head attention (32, 4h)    │
+│  │  Graph Attention │  Layer 2: Structural embedding (16 dims)   │
+│  │     Network      │  Output:  Graph-aware account embeddings   │
+│  └────────┬─────────┘                                            │
+│           │  GAT embeddings (16 dims)                            │
+│           │  + raw node features (6 dims)                        │
+│           ▼  = augmented input (22 dims)                         │
+│  ┌──────────────────┐                                            │
+│  │ GradientBoosting │  150 estimators  ·  depth 4                │
+│  │   Classifier     │  Output: fraud probability per account     │
+│  └────────┬─────────┘  ROC-AUC: 1.0                              │
 │           │                                                      │
 │           ▼                                                      │
-│  ┌──────────────────┐                                           │
-│  │  explainer.py    │  NetworkX cycle detection for rings       │
-│  │  + NVIDIA NIM    │  LLaMA 3.1 → plain-English alerts         │
-│  └────────┬─────────┘                                           │
+│  ┌──────────────────┐                                            │
+│  │  explainer.py    │  NetworkX cycle detection for rings        │
+│  │  + NVIDIA NIM    │  LLaMA 3.1 → plain-English alerts          │
+│  └────────┬─────────┘                                            │
 │           ▼                                                      │
-│  ┌──────────────────┐                                           │
-│  │    main.py       │  FastAPI  ·  /analyze  ·  /top-fraud      │
-│  │   FastAPI App    │  Dark dashboard  ·  Live risk scores      │
-│  └──────────────────┘                                           │
+│  ┌──────────────────┐                                            │
+│  │    main.py       │  FastAPI  ·  /analyze  ·  /top-fraud       │
+│  │   FastAPI App    │  Dark dashboard  ·  Live risk scores       │
+│  └──────────────────┘                                            │
 │                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### File structure
@@ -393,7 +393,7 @@ The combination of **GNN structural embeddings + LLM explanation** is a genuinel
 
 ---
 
-## 📝 Resume Description
+## 📝 Description
 
 > **FraudGraph** — Built a Graph Attention Network pipeline modelling 400 financial accounts and 2,182 transactions as a directed graph. GAT layers learn structural embeddings capturing fraud rings, funnel aggregation, and new-node explosion patterns invisible to standard per-transaction ML. Augmented GAT embeddings (16 dims) with a GradientBoosting classifier (ROC-AUC 1.0, 10/10 fraud rings detected). Integrated NVIDIA NIM LLaMA 3.1 for plain-English ring explanations for compliance teams. Synthetic data modelled after FATF, FIU-IND, and RBI documented fraud typologies.
 >
@@ -405,6 +405,5 @@ The combination of **GNN structural embeddings + LLM explanation** is a genuinel
 
 Built by **Sujay Rangrej** · K.L.E. Institute of Technology, Hubballi · VTU
 
-*Prepared as part of JPMorgan Chase SEP 2027 application*
 
 </div>
