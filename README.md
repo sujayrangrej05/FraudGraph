@@ -393,6 +393,12 @@ The combination of **GNN structural embeddings + LLM explanation** is a genuinel
 
 ---
 
+## 📊 Results
+![FraudGraph — GNN Fraud Detection_page-0001](https://github.com/user-attachments/assets/c4d081ab-d5d9-4627-b655-a3ec5256515b)
+![FraudGraph — GNN Fraud Detection1_page-0002](https://github.com/user-attachments/assets/424a1342-285f-4084-aad5-3d292ede607e)
+
+---
+
 ## 📝 Description
 
 > **FraudGraph** — Built a Graph Attention Network pipeline modelling 400 financial accounts and 2,182 transactions as a directed graph. GAT layers learn structural embeddings capturing fraud rings, funnel aggregation, and new-node explosion patterns invisible to standard per-transaction ML. Augmented GAT embeddings (16 dims) with a GradientBoosting classifier (ROC-AUC 1.0, 10/10 fraud rings detected). Integrated NVIDIA NIM LLaMA 3.1 for plain-English ring explanations for compliance teams. Synthetic data modelled after FATF, FIU-IND, and RBI documented fraud typologies.
@@ -403,7 +409,7 @@ The combination of **GNN structural embeddings + LLM explanation** is a genuinel
 
 <div align="center">
 
-Built by **Sujay Rangrej** · K.L.E. Institute of Technology, Hubballi · VTU
+Built by **Sujay Rangrej** 
 
 
 </div>
