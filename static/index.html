@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FraudGraph — GNN Fraud Detection</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffffff;--surface:#f5f5f5;--border:#e0e0e0;--border2:#c0c0c0;--text:#333333;--muted:#666666;--accent:#2563eb;--green:#2ecc71;--amber:#f0a500;--red:#e74c3c;--purple:#6b5b95;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;min-height:100vh}
+header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:baseline;gap:14px}
+.logo{font-family:var(--mono);font-size:17px;font-weight:500;color:var(--purple)}.logo span{color:var(--muted);font-weight:400}
+.tagline{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.main{padding:28px 32px;max-width:1200px;margin:0 auto}
+.metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:28px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.metric-label{font-size:10px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:500;font-family:var(--mono)}
+.mv-purple{color:var(--purple)}.mv-red{color:var(--red)}.mv-amber{color:var(--amber)}.mv-green{color:var(--green)}.mv-blue{color:var(--accent)}
+.btn{padding:11px 24px;background:var(--purple);color:#fff;font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.05em;border:none;border-radius:7px;cursor:pointer;margin-bottom:24px;transition:opacity .2s}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.3;cursor:not-allowed}
+.two-col{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.panel-header{padding:12px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.panel-body{padding:16px 18px;max-height:520px;overflow-y:auto}
+.chart-container{max-width:380px;margin:0 auto 24px;}
+.chart-container canvas{width:100%;height:200px;}
+.chart-section{margin-top:24px;text-align:center;}
+.chart-section h3{margin:0 0 4px;font-size:14px;font-family:var(--mono);color:var(--text);}
+.chart-section p{margin:0 0 12px;font-size:12px;color:var(--muted);font-family:var(--sans);}
+.acct-row{padding:10px 12px;border-radius:6px;background:var(--bg);border:1px solid var(--border);margin-bottom:8px}
+.acct-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.acct-id{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+.verdict{font-family:var(--mono);font-size:11px;font-weight:500;padding:2px 8px;border-radius:10px}
+.v-HIGH{background:rgba(231,76,60,.15);color:var(--red);border:1px solid rgba(231,76,60,.3)}
+.v-MEDIUM{background:rgba(240,165,0,.12);color:var(--amber);border:1px solid rgba(240,165,0,.3)}
+.score-bar{height:4px;background:var(--border);border-radius:2px;margin-bottom:7px;overflow:hidden}
+.score-fill{height:100%;border-radius:2px}
+.sf-high{background:var(--red)}.sf-medium{background:var(--amber)}
+.acct-stats{display:flex;gap:12px;margin-bottom:6px}
+.stat{font-size:11px;color:var(--muted)}
+.stat b{color:var(--text);font-weight:500}
+.explanation{font-size:11px;color:var(--muted);line-height:1.55;padding:7px 10px;background:rgba(155,127,244,.05);border-left:2px solid var(--purple);border-radius:0}
+.ring-row{padding:12px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--border);margin-bottom:10px}
+.ring-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ring-title{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--purple)}
+.ring-score{font-family:var(--mono);font-size:11px;color:var(--red)}
+.ring-nodes{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
+.node-pill{font-size:10px;font-family:var(--mono);padding:2px 7px;background:rgba(155,127,244,.12);border:1px solid rgba(155,127,244,.25);border-radius:10px;color:var(--purple)}
+.ring-exp{font-size:11px;color:var(--muted);line-height:1.55}
+.empty{font-size:12px;color:var(--muted);text-align:center;padding:40px 0;font-family:var(--mono);opacity:.5}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<header><div class="logo">Fraud<span>Graph</span></div><div class="tagline">Graph Attention Network · Transaction Fraud Detection</div></header>
+<div class="main">
+  <div class="metric-row" id="metricRow">
+    <div class="metric"><div class="metric-label">Accounts</div><div class="metric-val mv-blue" id="mNodes">—</div></div>
+    <div class="metric"><div class="metric-label">Transactions</div><div class="metric-val mv-blue" id="mEdges">—</div></div>
+    <div class="metric"><div class="metric-label">High risk</div><div class="metric-val mv-red" id="mHigh">—</div></div>
+    <div class="metric"><div class="metric-label">Medium risk</div><div class="metric-val mv-amber" id="mMedium">—</div></div>
+    <div class="metric"><div class="metric-label">Fraud rings</div><div class="metric-val mv-purple" id="mRings">—</div></div>
+    <div class="metric"><div class="metric-label">Model AUC</div><div class="metric-val mv-green" id="mAuc">—</div></div>
+   </div>
+
+
+    <button class="btn" id="analyzeBtn" onclick="runAnalysis()">Run graph fraud analysis</button>
+
+
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-header">Suspicious accounts — GAT fraud scores</div>
+      <div class="panel-body" id="accountsList"><div class="empty">Run analysis to detect suspicious accounts</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Detected fraud rings — circular money flows</div>
+      <div class="panel-body" id="ringsList"><div class="empty">Run analysis to detect fraud rings</div></div>
+    </div>
+  </div>
+</div>
+<div class="chart-section">
+  <h3>Risk Distribution</h3>
+  <p>This doughnut chart displays the number of accounts in each risk category (high, medium, low) after the analysis.</p>
+  <div class="chart-container"><canvas id="riskChart"></canvas></div>
+   <button class="btn snapshot-btn" onclick="downloadCanvas('riskChart','riskChart.png')">Download Risk Chart</button>
+</div>
+<div class="chart-section">
+  <h3>Top Suspicious Accounts</h3>
+  <p>This bar chart shows the fraud score (percentage) for the most suspicious accounts identified.</p>
+  <div class="chart-container"><canvas id="topAccountsChart"></canvas></div>
+   <button class="btn snapshot-btn" onclick="downloadCanvas('topAccountsChart','topAccountsChart.png')">Download Top Accounts Chart</button>
+</div>
+<div class="chart-section">
+  <h3>Fraud Ring Sizes</h3>
+  <p>This bar chart presents the count of detected fraud rings grouped by their size (number of accounts in the ring).</p>
+  <div class="chart-container"><canvas id="ringSizeChart"></canvas></div>
+   <button class="btn snapshot-btn" onclick="downloadCanvas('ringSizeChart','ringSizeChart.png')">Download Ring Size Chart</button>
+</div>
+
+<script>
+async function loadStats() {
+  try {
+    const r = await fetch('/graph-stats');
+    const d = await r.json();
+    document.getElementById('mNodes').textContent = d.nodes.toLocaleString();
+    document.getElementById('mEdges').textContent = d.edges.toLocaleString();
+    document.getElementById('mAuc').textContent   = d.model_roc_auc;
+  } catch(e) {}
+}
+
+async function runAnalysis() {
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analysing graph...';
+
+  try {
+    const r = await fetch('/analyze', {method:'POST'});
+    const d = await r.json();
+    const s = d.summary;
+
+    document.getElementById('mNodes').textContent  = s.total_accounts.toLocaleString();
+    document.getElementById('mEdges').textContent  = s.total_transactions.toLocaleString();
+    document.getElementById('mHigh').textContent   = s.high_risk_accounts;
+    document.getElementById('mMedium').textContent = s.medium_risk_accounts;
+    document.getElementById('mRings').textContent  = s.fraud_rings_detected;
+    document.getElementById('mAuc').textContent    = s.model_roc_auc;
+
+    renderAccounts(d.top_suspicious_accounts);
+    renderRings(d.fraud_rings);
+    drawRiskChart(s.high_risk_accounts, s.medium_risk_accounts, s.low_risk_accounts);
+    drawTopAccountsChart(d.top_suspicious_accounts);
+    drawRingSizeChart(d.fraud_rings);
+  } catch(e) {
+    alert('Analysis error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Run graph fraud analysis';
+  }
+}
+
+function renderAccounts(accounts) {
+  const el = document.getElementById('accountsList');
+  if (!accounts.length) { el.innerHTML = '<div class="empty">No suspicious accounts found</div>'; return; }
+  el.innerHTML = accounts.map(a => `
+    <div class="acct-row">
+      <div class="acct-top">
+        <span class="acct-id">Account #${a.account_id}</span>
+        <span class="verdict v-${a.verdict}">${a.verdict} — ${(a.fraud_score*100).toFixed(0)}%</span>
+      </div>
+      <div class="score-bar"><div class="score-fill sf-${a.verdict.toLowerCase()}" style="width:${a.fraud_score*100}%"></div></div>
+      <div class="acct-stats">
+        <span class="stat">Age: <b>${a.account_age_days}d</b></span>
+        <span class="stat">Out: <b>${a.degree_out}</b></span>
+        <span class="stat">In: <b>${a.degree_in}</b></span>
+        <span class="stat">Suspicious nbrs: <b>${(a.fraud_neighbor_ratio*100).toFixed(0)}%</b></span>
+        <span class="stat">Vel: <b>${a.velocity_24h}/24h</b></span>
+      </div>
+      <div class="explanation">${a.explanation}</div>
+    </div>
+  `).join('');
+}
+
+function renderRings(rings) {
+  const el = document.getElementById('ringsList');
+  if (!rings.length) { el.innerHTML = '<div class="empty">No fraud rings detected</div>'; return; }
+  el.innerHTML = rings.map((r, i) => `
+    <div class="ring-row">
+      <div class="ring-top">
+        <span class="ring-title">Ring ${i+1} — ${r.size} accounts</span>
+        <span class="ring-score">${(r.avg_fraud_score*100).toFixed(0)}% avg risk</span>
+      </div>
+      <div class="ring-nodes">${r.nodes.map(n => `<span class="node-pill">#${n}</span>`).join('')}</div>
+      <div class="ring-exp">${r.explanation}</div>
+    </div>
+  `).join('');
+}
+let riskChart;
+let topAccountsChart;
+let ringSizeChart;
+function drawRiskChart(high, medium, low) {
+  const ctx = document.getElementById('riskChart').getContext('2d');
+  if (riskChart) {
+    riskChart.destroy();
+  }
+  const colors = [
+    getComputedStyle(document.documentElement).getPropertyValue('--red').trim(),
+    getComputedStyle(document.documentElement).getPropertyValue('--amber').trim(),
+    getComputedStyle(document.documentElement).getPropertyValue('--green').trim()
+  ];
+  riskChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['High', 'Medium', 'Low'],
+      datasets: [{ data: [high, medium, low], backgroundColor: colors }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+}
+
+function drawTopAccountsChart(accounts) {
+  const ctx = document.getElementById('topAccountsChart').getContext('2d');
+  if (topAccountsChart) {
+    topAccountsChart.destroy();
+  }
+  const labels = accounts.map(a => `#${a.account_id}`);
+  const data = accounts.map(a => Math.round(a.fraud_score * 100));
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--red').trim();
+  topAccountsChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: 'Fraud Score %', data: data, backgroundColor: color }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, max: 100 } }
+    }
+  });
+}
+function drawRingSizeChart(rings) {
+  const ctx = document.getElementById('ringSizeChart').getContext('2d');
+  if (ringSizeChart) {
+    ringSizeChart.destroy();
+  }
+  const sizeCounts = {};
+  rings.forEach(r => {
+    sizeCounts[r.size] = (sizeCounts[r.size] || 0) + 1;
+  });
+  const labels = Object.keys(sizeCounts);
+  const data = Object.values(sizeCounts);
+  const color = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim();
+  ringSizeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label: 'Ring Count', data: data, backgroundColor: color }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+loadStats();
+function downloadCanvas(canvasId, filename) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  link.download = filename;
+  link.click();
+}
+</script>
+</body>
+</html>
