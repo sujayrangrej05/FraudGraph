@@ -12,7 +12,7 @@ import networkx as nx
 import numpy as np
 
 
-NIM_API_KEY = os.getenv("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", "")
+NIM_API_KEY = os.getenv("Add Your build.nvidia.com API Key Here", "")
 NIM_URL     = "https://integrate.api.nvidia.com/v1/chat/completions"
 NIM_MODEL   = "meta/llama-3.1-8b-instruct"
 
